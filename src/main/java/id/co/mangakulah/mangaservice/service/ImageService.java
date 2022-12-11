@@ -7,6 +7,7 @@ import id.co.mangakulah.mangaservice.dto.*;
 import id.co.mangakulah.mangaservice.dto.request.*;
 import id.co.mangakulah.mangaservice.handler.ImageFileRenamingHandler;
 import id.co.mangakulah.mangaservice.handler.ImageScrapingHandler;
+import id.co.mangakulah.mangaservice.util.FileUtil;
 import org.springframework.stereotype.Service;
 
 import java.io.*;
@@ -111,21 +112,26 @@ public class ImageService {
             });
 
             String fileName = "image_counter";
+            String fileNameForScript = "image_counter_split_comma";
             int i = 1;
             while (scrapingHandler.isFileExist(baseDir, i, fileName)){
                 i++;
             }
             String path = baseDir+fileName+"_"+i+".txt";
-            System.out.println("Final path -> "+path);
+
+            System.out.println("Final path for ImageCounter -> "+path);
             FileWriter myWriter = new FileWriter(path);
+            AtomicReference<String> contentForScript = new AtomicReference<>("");
             imgCountList.forEach(j -> {
                 try {
                     myWriter.write(j.getChapterName() +"="+j.getImgCount()+System.lineSeparator());
+                    contentForScript.set(contentForScript.get() + j.getImgCount() + ",");
                 } catch (IOException e) {
                     //e.printStackTrace();
                 }
             });
             myWriter.close();
+            FileUtil.writeToFile(baseDir, fileNameForScript+"_"+i+".txt", contentForScript.get());
 
 
         }catch (Exception e){

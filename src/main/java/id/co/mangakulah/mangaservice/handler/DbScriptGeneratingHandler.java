@@ -5,10 +5,8 @@ import id.co.mangakulah.mangaservice.util.DateFormatUtil;
 import id.co.mangakulah.mangaservice.util.StringUtil;
 
 import java.io.BufferedWriter;
-import java.io.FileWriter;
 import java.io.IOException;
 import java.nio.charset.Charset;
-import java.nio.charset.StandardCharsets;
 import java.nio.file.Files;
 import java.nio.file.Path;
 import java.util.Date;
@@ -65,7 +63,6 @@ public class DbScriptGeneratingHandler {
 
     private void writeToFile(String baseDir, String fileName, String wpPostScript, String wpTermScript) throws IOException {
         String path = baseDir+fileName;
-        FileWriter myWriter = new FileWriter(path);
 
         Charset charset = Charset.forName("US-ASCII");
         String s = wpPostScript+wpTermScript;
