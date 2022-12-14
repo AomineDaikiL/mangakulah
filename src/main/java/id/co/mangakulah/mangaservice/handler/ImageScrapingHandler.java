@@ -6,6 +6,7 @@ import org.jsoup.nodes.Element;
 
 import java.io.*;
 import java.net.HttpURLConnection;
+import java.net.MalformedURLException;
 import java.net.URL;
 import java.util.Iterator;
 
@@ -14,6 +15,21 @@ public class ImageScrapingHandler {
     private static final int BUFFER_SIZE = 4096;
 
     public int scrapingImage(String baseDir, String url) throws InterruptedException, IOException {
+        try{
+            connect(url);
+        }catch (IOException e){
+            System.out.println("trying to connect ...1");
+            try{
+                connect(url);
+            }catch (IOException e1){
+                System.out.println("trying to connect ...2");
+                try{
+                    connect(url);
+                }catch (IOException e2){
+                    System.out.println("trying to connect ...3");
+                }
+            }
+        }
         Document doc = Jsoup.connect(url).get();
         Iterator<Element> ie = doc.select("img").iterator();
         int i = 1;
@@ -26,7 +42,7 @@ public class ImageScrapingHandler {
             if (!imageUrlString.contains("img")) continue;
 
             try {
-                HttpURLConnection response = makeImageRequest(url, imageUrlString);
+                HttpURLConnection response = makeImageRequest(url, imageUrlString, 0);
 
                 if (response.getResponseCode() == 200) {
                     writeToFile(i, response, baseDir);
@@ -43,6 +59,10 @@ public class ImageScrapingHandler {
             Thread.sleep(200l); // prevent yourself from being blocked due to rate limiting
         }
         return i;
+    }
+
+    private Document connect(String url) throws IOException {
+        return Jsoup.connect(url).get();
     }
 
     private void writeToFile(int i, HttpURLConnection response, String baseDir) throws IOException {
@@ -63,16 +83,25 @@ public class ImageScrapingHandler {
         System.out.println("File downloaded");
     }
 
-    private HttpURLConnection makeImageRequest(String referer, String imageUrlString) throws IOException {
+    private HttpURLConnection makeImageRequest(String referer, String imageUrlString, Integer counter) throws MalformedURLException {
         URL imageUrl = new URL(imageUrlString);
-        HttpURLConnection response = (HttpURLConnection) imageUrl.openConnection();
+        HttpURLConnection response = null;
+        try {
+            response = (HttpURLConnection) imageUrl.openConnection();
 
-        response.setRequestMethod("GET");
-        response.setRequestProperty("referer", referer);
+            response.setRequestMethod("GET");
+            response.setRequestProperty("referer", referer);
 
-        response.setConnectTimeout(TIMEOUT);
-        response.setReadTimeout(TIMEOUT);
-        response.connect();
+            response.setConnectTimeout(TIMEOUT);
+            response.setReadTimeout(TIMEOUT);
+            response.connect();
+        }catch (IOException e){
+            System.out.println("Failed to download image");
+            if(counter < 3){
+                counter++;
+                makeImageRequest(referer, imageUrlString, counter);
+            }
+        }
         return response;
     }
 

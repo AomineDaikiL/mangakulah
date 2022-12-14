@@ -63,10 +63,7 @@ public class ImageService {
             String baseUrl = request.getBaseUrl();
             String endPoint = request.getEndPointUrl();
             Integer digit = request.getChapterDigit();
-            String pattern = "%02d";
-            if (digit == 3){
-                pattern = "%03d";
-            }
+            String pattern = "%0"+digit+"d";
 
             for(int i= request.getStartFromChap(); i<= request.getEndOfChap(); i++){
                 ImageInfoDto dto = new ImageInfoDto();
@@ -87,7 +84,7 @@ public class ImageService {
         return null;
     }
 
-    public Boolean scrapingImage(ScrapingImageRequest request){
+    public boolean scrapingImage(ScrapingImageRequest request){
         try {
             String baseDir = request.getDirPathDownload();
             List<ImageInfoDto> infos = request.getImageInfos();
@@ -103,10 +100,10 @@ public class ImageService {
                     imgCount.setImgCount(count-1);
                     imgCountList.add(imgCount);
                 } catch (InterruptedException e) {
-                    //e.printStackTrace();
+                    e.printStackTrace();
                     System.out.println("InterruptedException happen !!!");
                 } catch (IOException e) {
-                    //e.printStackTrace();
+                    e.printStackTrace();
                     System.out.println("IOException happen !!!");
                 }
             });

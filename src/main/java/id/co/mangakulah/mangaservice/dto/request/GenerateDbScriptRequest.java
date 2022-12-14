@@ -6,6 +6,7 @@ public class GenerateDbScriptRequest {
     private String fileName;
     private String mangaName;
     Integer idTermManga;
+    Integer seriesId;
     Integer startFromChapter;
     String imgCount;
     Integer startIdScript;
@@ -72,5 +73,13 @@ public class GenerateDbScriptRequest {
 
     public void setStartIdScript(Integer startIdScript) {
         this.startIdScript = startIdScript;
+    }
+
+    public Integer getSeriesId() {
+        return seriesId;
+    }
+
+    public void setSeriesId(Integer seriesId) {
+        this.seriesId = seriesId;
     }
 }
