@@ -27,6 +27,16 @@ public class ImageScrapingHandler {
                     connect(url);
                 }catch (IOException e2){
                     System.out.println("trying to connect ...3");
+                    try{
+                        connect(url);
+                    }catch (IOException e3){
+                        System.out.println("trying to connect ...4");
+                        try{
+                            connect(url);
+                        }catch (IOException e4){
+                            System.out.println("trying to connect ...5");
+                        }
+                    }
                 }
             }
         }
