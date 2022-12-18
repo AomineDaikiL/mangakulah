@@ -8,6 +8,7 @@ import id.co.mangakulah.mangaservice.dto.request.*;
 import id.co.mangakulah.mangaservice.handler.ImageFileRenamingHandler;
 import id.co.mangakulah.mangaservice.handler.ImageScrapingHandler;
 import id.co.mangakulah.mangaservice.util.FileUtil;
+import id.co.mangakulah.mangaservice.util.StringUtil;
 import org.springframework.stereotype.Service;
 
 import java.io.*;
@@ -130,6 +131,63 @@ public class ImageService {
             myWriter.close();
             FileUtil.writeToFile(baseDir, fileNameForScript+"_"+i+".txt", contentForScript.get());
 
+
+        }catch (Exception e){
+            return false;
+        }
+        return true;
+    }
+
+    public boolean scrapingImageV2(ScrapingImageRequestV2 request){
+        try {
+            String folderName = request.getFolderMangaName().replaceAll(" ", "-").toLowerCase();
+            String baseDir = ImageConstant.IMAGE_SCRAPING_BASE_PATH_DIR+folderName+"/";
+            String urlMangaChapter = request.getUrlMangaChapter();
+            ImageScrapingHandler scrapingHandler = new ImageScrapingHandler();
+            List<ImageCounterDto> imgCountList = new ArrayList<>();
+
+            List<ImageInfoDtoV2> chapterUrlList = new ImageScrapingHandler().getAllChapterUrl(urlMangaChapter);
+            System.out.println("COUNT of CHAPTER ::: "+chapterUrlList.size());
+            chapterUrlList.forEach(i -> {
+                try {
+                    String dir = baseDir+ StringUtil.formatChapter3Digit(i.getChapter());
+                    createdDirectory(dir);
+                    int count = scrapingHandler.scrapingImage(dir, i.getImageUrl());
+                    ImageCounterDto imgCount = new ImageCounterDto();
+                    imgCount.setChapterName(StringUtil.formatChapterNumber(i.getChapter()));
+                    imgCount.setImgCount(count-1);
+                    imgCountList.add(imgCount);
+                } catch (InterruptedException e) {
+                    e.printStackTrace();
+                    System.out.println("InterruptedException happen !!!");
+                } catch (IOException e) {
+                    e.printStackTrace();
+                    System.out.println("IOException happen !!!");
+                }
+            });
+
+            String fileName = "image_counter";
+            //String fileNameForScript = "image_counter_split_comma";
+            int i = 1;
+            while (scrapingHandler.isFileExist(baseDir, i, fileName)){
+                i++;
+            }
+            String path = baseDir+fileName+"_"+i+".txt";
+
+            System.out.println("Final path for ImageCounter -> "+path);
+            /*FileWriter myWriter = new FileWriter(path);
+            AtomicReference<String> contentForScript = new AtomicReference<>("");
+            imgCountList.forEach(j -> {
+                try {
+                    myWriter.write(j.getChapterName() +"="+j.getImgCount()+System.lineSeparator());
+                    contentForScript.set(contentForScript.get() + j.getImgCount() + ",");
+                } catch (IOException e) {
+                    //e.printStackTrace();
+                }
+            });
+            myWriter.write("totalOfChapter="+imgCountList.size());
+            myWriter.close();*/
+            FileUtil.writeToFile(baseDir, fileName+"_"+i+".txt", new Gson().toJson(imgCountList));
 
         }catch (Exception e){
             return false;

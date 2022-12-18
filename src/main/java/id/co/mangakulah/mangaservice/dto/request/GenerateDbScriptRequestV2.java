@@ -1,15 +1,18 @@
 package id.co.mangakulah.mangaservice.dto.request;
 
-public class GenerateDbScriptRequest {
+import id.co.mangakulah.mangaservice.dto.ImageCounterDto;
+
+import java.util.List;
+
+public class GenerateDbScriptRequestV2 {
     private String directoryPath;
     private String imageLocation;
     private String fileName;
     private String mangaName;
     private Integer idTermManga;
     private Integer seriesId;
-    private Integer startFromChapter;
-    private String imgCount;
     private Integer startIdScript;
+    private List<ImageCounterDto> imageCounterList;
 
     public String getDirectoryPath() {
         return directoryPath;
@@ -51,20 +54,12 @@ public class GenerateDbScriptRequest {
         this.idTermManga = idTermManga;
     }
 
-    public Integer getStartFromChapter() {
-        return startFromChapter;
+    public Integer getSeriesId() {
+        return seriesId;
     }
 
-    public void setStartFromChapter(Integer startFromChapter) {
-        this.startFromChapter = startFromChapter;
-    }
-
-    public String getImgCount() {
-        return imgCount;
-    }
-
-    public void setImgCount(String imgCount) {
-        this.imgCount = imgCount;
+    public void setSeriesId(Integer seriesId) {
+        this.seriesId = seriesId;
     }
 
     public Integer getStartIdScript() {
@@ -75,11 +70,11 @@ public class GenerateDbScriptRequest {
         this.startIdScript = startIdScript;
     }
 
-    public Integer getSeriesId() {
-        return seriesId;
+    public List<ImageCounterDto> getImageCounterList() {
+        return imageCounterList;
     }
 
-    public void setSeriesId(Integer seriesId) {
-        this.seriesId = seriesId;
+    public void setImageCounterList(List<ImageCounterDto> imageCounterList) {
+        this.imageCounterList = imageCounterList;
     }
 }

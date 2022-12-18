@@ -51,6 +51,12 @@ public class ImageController {
         return imageService.scrapingImage(request);
     }
 
+    @ApiOperation("Image Scraping From Site Page by URL V2")
+    @PostMapping(value = "scrapingV2", consumes = {MediaType.APPLICATION_JSON_VALUE}, produces = {MediaType.APPLICATION_JSON_VALUE})
+    public Boolean scrapingImageV2(@RequestBody ScrapingImageRequestV2 request){
+        return imageService.scrapingImageV2(request);
+    }
+
     @ApiOperation("Renaming Image File ASC")
     @PostMapping(value = "renamefile", consumes = {MediaType.APPLICATION_JSON_VALUE}, produces = {MediaType.APPLICATION_JSON_VALUE})
     public Boolean renamingImageFile(@RequestBody RenamingImageFileRequest request){

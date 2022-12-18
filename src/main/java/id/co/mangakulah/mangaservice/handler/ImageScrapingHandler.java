@@ -1,5 +1,8 @@
 package id.co.mangakulah.mangaservice.handler;
 
+import com.google.gson.Gson;
+import id.co.mangakulah.mangaservice.dto.ImageInfoDtoV2;
+import id.co.mangakulah.mangaservice.dto.request.ScrapingImageRequest;
 import org.jsoup.Jsoup;
 import org.jsoup.nodes.Document;
 import org.jsoup.nodes.Element;
@@ -8,7 +11,10 @@ import java.io.*;
 import java.net.HttpURLConnection;
 import java.net.MalformedURLException;
 import java.net.URL;
+import java.util.ArrayList;
+import java.util.Collections;
 import java.util.Iterator;
+import java.util.List;
 
 public class ImageScrapingHandler {
     private static int TIMEOUT = 30000;
@@ -41,15 +47,20 @@ public class ImageScrapingHandler {
             }
         }
         Document doc = Jsoup.connect(url).get();
-        Iterator<Element> ie = doc.select("img").iterator();
+        Iterator<Element> ie = null;
+        if (url.contains("komikcast")){
+            ie = doc.select("img").iterator();
+        }else{
+            Element e = doc.getElementById("readerarea");
+            ie = e.select("img").iterator();
+        }
         int i = 1;
-        int j = 1;
 
         while (ie.hasNext()) {
             String imageUrlString = ie.next().attr("src");
             System.out.println(imageUrlString + " ");
             //if (!imageUrlString.contains("chapter")) continue; //mangaTale
-            if (!imageUrlString.contains("img")) continue;
+            if (!imageUrlString.contains("img") && url.contains("komikcast")) continue;
 
             try {
                 HttpURLConnection response = makeImageRequest(url, imageUrlString, 0);
@@ -149,6 +160,41 @@ public class ImageScrapingHandler {
             return true;
         }
         return false;
+    }
+
+    public List<ImageInfoDtoV2> getAllChapterUrl(String url) throws IOException {
+        Document doc = Jsoup.connect(url).get();
+        Iterator<Element> ie = doc.select("a").iterator();
+        List<ImageInfoDtoV2> infos = new ArrayList<>();
+        if (url.contains("komikcast")){
+            while (ie.hasNext()){
+                Element e = ie.next();
+                String chapterUrl = e.attr("href");
+                if (!chapterUrl.contains("chapter")) continue;
+                String chapterName = e.text().replaceAll("Chapter", "").trim();
+                ImageInfoDtoV2 dto = new ImageInfoDtoV2();
+                dto.setImageUrl(chapterUrl);
+                dto.setChapter(chapterName);
+                infos.add(dto);
+            }
+        }else if (url.contains("mangatale")){
+            while (ie.hasNext()){
+                Element e = ie.next();
+                String chapterUrl = e.attr("href");
+                if (!chapterUrl.contains("chapter")) continue;
+                String chapterName = e.child(0).text();
+                if (chapterName.contains("New")) continue;
+                chapterName = chapterName.replaceAll("Chapter", "").trim();
+                ImageInfoDtoV2 dto = new ImageInfoDtoV2();
+                dto.setImageUrl(chapterUrl);
+                dto.setChapter(chapterName);
+                infos.add(dto);
+            }
+        }
+
+        Collections.reverse(infos);
+        //System.out.println(new Gson().toJson(infos));
+        return infos;
     }
 
 }
