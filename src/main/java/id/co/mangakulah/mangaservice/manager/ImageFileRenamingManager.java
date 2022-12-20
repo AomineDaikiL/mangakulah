@@ -1,8 +1,8 @@
-package id.co.mangakulah.mangaservice.handler;
+package id.co.mangakulah.mangaservice.manager;
 
 import java.io.File;
 
-public class ImageFileRenamingHandler {
+public class ImageFileRenamingManager {
 
     public void renamingFile(String folder_path){
         File myfolder = new File(folder_path);

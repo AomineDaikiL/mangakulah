@@ -6,10 +6,7 @@ import id.co.mangakulah.mangaservice.service.ImageService;
 import io.swagger.annotations.ApiOperation;
 import org.springframework.beans.factory.annotation.Autowired;
 import org.springframework.http.MediaType;
-import org.springframework.web.bind.annotation.PostMapping;
-import org.springframework.web.bind.annotation.RequestBody;
-import org.springframework.web.bind.annotation.RequestMapping;
-import org.springframework.web.bind.annotation.RestController;
+import org.springframework.web.bind.annotation.*;
 
 @RestController
 @RequestMapping(path = "mangakulah/image/")
@@ -55,6 +52,12 @@ public class ImageController {
     @PostMapping(value = "scrapingV2", consumes = {MediaType.APPLICATION_JSON_VALUE}, produces = {MediaType.APPLICATION_JSON_VALUE})
     public Boolean scrapingImageV2(@RequestBody ScrapingImageRequestV2 request){
         return imageService.scrapingImageV2(request);
+    }
+
+    @ApiOperation("Image Counter")
+    @PostMapping(value = "counter", consumes = {MediaType.APPLICATION_JSON_VALUE}, produces = {MediaType.APPLICATION_JSON_VALUE})
+    public Boolean countImageFile(@RequestBody CountImageFileRequest request){
+        return imageService.countImageFile(request);
     }
 
     @ApiOperation("Renaming Image File ASC")

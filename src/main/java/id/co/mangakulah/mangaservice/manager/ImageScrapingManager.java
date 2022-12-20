@@ -1,8 +1,6 @@
-package id.co.mangakulah.mangaservice.handler;
+package id.co.mangakulah.mangaservice.manager;
 
-import com.google.gson.Gson;
 import id.co.mangakulah.mangaservice.dto.ImageInfoDtoV2;
-import id.co.mangakulah.mangaservice.dto.request.ScrapingImageRequest;
 import org.jsoup.Jsoup;
 import org.jsoup.nodes.Document;
 import org.jsoup.nodes.Element;
@@ -16,7 +14,7 @@ import java.util.Collections;
 import java.util.Iterator;
 import java.util.List;
 
-public class ImageScrapingHandler {
+public class ImageScrapingManager {
     private static int TIMEOUT = 30000;
     private static final int BUFFER_SIZE = 4096;
 

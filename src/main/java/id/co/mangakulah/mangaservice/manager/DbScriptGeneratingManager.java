@@ -1,4 +1,4 @@
-package id.co.mangakulah.mangaservice.handler;
+package id.co.mangakulah.mangaservice.manager;
 
 import id.co.mangakulah.mangaservice.dto.ImageCounterDto;
 import id.co.mangakulah.mangaservice.dto.request.GenerateDbScriptRequest;
@@ -15,7 +15,7 @@ import java.util.Date;
 import java.util.List;
 import java.util.Random;
 
-public class DbScriptGeneratingHandler {
+public class DbScriptGeneratingManager {
 
     public void generateDbScript(GenerateDbScriptRequest request) throws IOException {
         String imageLocation = request.getImageLocation();

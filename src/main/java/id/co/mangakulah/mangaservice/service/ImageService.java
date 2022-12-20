@@ -5,8 +5,8 @@ import com.google.gson.GsonBuilder;
 import id.co.mangakulah.mangaservice.constant.ImageConstant;
 import id.co.mangakulah.mangaservice.dto.*;
 import id.co.mangakulah.mangaservice.dto.request.*;
-import id.co.mangakulah.mangaservice.handler.ImageFileRenamingHandler;
-import id.co.mangakulah.mangaservice.handler.ImageScrapingHandler;
+import id.co.mangakulah.mangaservice.manager.ImageFileRenamingManager;
+import id.co.mangakulah.mangaservice.manager.ImageScrapingManager;
 import id.co.mangakulah.mangaservice.util.FileUtil;
 import id.co.mangakulah.mangaservice.util.StringUtil;
 import org.springframework.stereotype.Service;
@@ -15,10 +15,7 @@ import java.io.*;
 import java.net.MalformedURLException;
 import java.net.URISyntaxException;
 import java.net.URL;
-import java.util.ArrayList;
-import java.util.HashMap;
-import java.util.List;
-import java.util.Map;
+import java.util.*;
 import java.util.concurrent.atomic.AtomicReference;
 
 @Service
@@ -89,7 +86,7 @@ public class ImageService {
         try {
             String baseDir = request.getDirPathDownload();
             List<ImageInfoDto> infos = request.getImageInfos();
-            ImageScrapingHandler scrapingHandler = new ImageScrapingHandler();
+            ImageScrapingManager scrapingHandler = new ImageScrapingManager();
             List<ImageCounterDto> imgCountList = new ArrayList<>();
             infos.forEach(i -> {
                 try {
@@ -143,31 +140,102 @@ public class ImageService {
             String folderName = request.getFolderMangaName().replaceAll(" ", "-").toLowerCase();
             String baseDir = ImageConstant.IMAGE_SCRAPING_BASE_PATH_DIR+folderName+"/";
             String urlMangaChapter = request.getUrlMangaChapter();
-            ImageScrapingHandler scrapingHandler = new ImageScrapingHandler();
+
+            ImageScrapingManager scrapingHandler = new ImageScrapingManager();
             List<ImageCounterDto> imgCountList = new ArrayList<>();
 
-            List<ImageInfoDtoV2> chapterUrlList = new ImageScrapingHandler().getAllChapterUrl(urlMangaChapter);
-            System.out.println("COUNT of CHAPTER ::: "+chapterUrlList.size());
-            chapterUrlList.forEach(i -> {
-                try {
-                    String dir = baseDir+ StringUtil.formatChapter3Digit(i.getChapter());
-                    createdDirectory(dir);
-                    int count = scrapingHandler.scrapingImage(dir, i.getImageUrl());
-                    ImageCounterDto imgCount = new ImageCounterDto();
-                    imgCount.setChapterName(StringUtil.formatChapterNumber(i.getChapter()));
-                    imgCount.setImgCount(count-1);
-                    imgCountList.add(imgCount);
-                } catch (InterruptedException e) {
-                    e.printStackTrace();
-                    System.out.println("InterruptedException happen !!!");
-                } catch (IOException e) {
-                    e.printStackTrace();
-                    System.out.println("IOException happen !!!");
-                }
-            });
+            if (urlMangaChapter.contains("chapter")){
+                // download one chapter
+                ImageInfoDtoV2 dto = new ImageInfoDtoV2();
+                dto.setImageUrl(urlMangaChapter);
+                dto.setChapter(StringUtil.getChapterNumberFromUrl(urlMangaChapter));
 
-            String fileName = "image_counter";
-            //String fileNameForScript = "image_counter_split_comma";
+                try{
+                    String dir = baseDir+ StringUtil.formatChapter3Digit(dto.getChapter());
+                    int fileSize = createdDirectoryV2(dir);
+                    if (fileSize > 0) {
+                        System.out.println("Skip download Chapter-"+dto.getChapter());
+                    }
+                    int count = scrapingHandler.scrapingImage(dir, dto.getImageUrl());
+
+                    GenerateChapterScriptRequest rq = new GenerateChapterScriptRequest();
+                    rq.setChapter(StringUtil.formatChapterNumber(dto.getChapter()));
+                    rq.setImageCount(count-1);
+                    rq.setImageNameDigit(3);
+                    rq.setComicName(folderName);
+                    generateChapterScript(rq);
+                }catch (Exception e){
+                    e.printStackTrace();
+                }
+
+            }else {
+                // download all chapter
+                List<ImageInfoDtoV2> chapterUrlList  = new ImageScrapingManager().getAllChapterUrl(urlMangaChapter);
+                System.out.println("COUNT of CHAPTER ::: "+chapterUrlList.size());
+                chapterUrlList.forEach(i -> {
+                    try {
+                        String dir = baseDir+ StringUtil.formatChapter3Digit(i.getChapter());
+                        int fileSize = createdDirectoryV2(dir);
+                        if (fileSize > 0) {
+                            System.out.println("Skip download Chapter-"+i.getChapter());
+                            return;
+                        }
+                        int count = scrapingHandler.scrapingImage(dir, i.getImageUrl());
+                        ImageCounterDto imgCount = new ImageCounterDto();
+                        imgCount.setChapterName(StringUtil.formatChapterNumber(i.getChapter()));
+                        imgCount.setImgCount(count-1);
+                        imgCountList.add(imgCount);
+                    } catch (InterruptedException e) {
+                        e.printStackTrace();
+                        System.out.println("InterruptedException happen !!!");
+                    } catch (IOException e) {
+                        e.printStackTrace();
+                        System.out.println("IOException happen !!!");
+                    }
+                });
+
+                String fileName = ImageConstant.IMAGE_COUNTER_FILE_NAME;
+                int i = 1;
+                while (scrapingHandler.isFileExist(baseDir, i, fileName)){
+                    i++;
+                }
+                String path = baseDir+fileName+"_"+i+".txt";
+
+                System.out.println("Final path for ImageCounter -> "+path);
+                FileUtil.writeToFile(baseDir, fileName+"_"+i+".txt", new Gson().toJson(imgCountList));
+            }
+
+
+        }catch (Exception e){
+            e.printStackTrace();
+            return false;
+        }
+        return true;
+    }
+
+    public Boolean countImageFile(CountImageFileRequest request){
+        try {
+            String folderName = request.getFolderMangaName().replaceAll(" ", "-").toLowerCase();
+            String baseDir = ImageConstant.IMAGE_SCRAPING_BASE_PATH_DIR+folderName+"/";
+
+            File directoryPath = new File(baseDir);
+            File[] files = directoryPath.listFiles();
+            if (request.isSortedByLastModified()){
+                Arrays.sort(files, Comparator.comparingLong(File::lastModified));
+            }
+            List<ImageCounterDto> imgCountList = new ArrayList<>();
+            System.out.println("COUNT of CHAPTER ::: "+files.length);
+            for(int i=0; i<files.length; i++) {
+                ImageCounterDto dto = new ImageCounterDto();
+                dto.setChapterName(StringUtil.formatChapterNumber(files[i].getName()));
+                File file = new File(baseDir+files[i].getName());
+                if (file.isFile()) continue;
+                dto.setImgCount(file.listFiles().length);
+                imgCountList.add(dto);
+            }
+
+            ImageScrapingManager scrapingHandler = new ImageScrapingManager();
+            String fileName = ImageConstant.IMAGE_COUNTER_FILE_NAME;
             int i = 1;
             while (scrapingHandler.isFileExist(baseDir, i, fileName)){
                 i++;
@@ -175,21 +243,10 @@ public class ImageService {
             String path = baseDir+fileName+"_"+i+".txt";
 
             System.out.println("Final path for ImageCounter -> "+path);
-            /*FileWriter myWriter = new FileWriter(path);
-            AtomicReference<String> contentForScript = new AtomicReference<>("");
-            imgCountList.forEach(j -> {
-                try {
-                    myWriter.write(j.getChapterName() +"="+j.getImgCount()+System.lineSeparator());
-                    contentForScript.set(contentForScript.get() + j.getImgCount() + ",");
-                } catch (IOException e) {
-                    //e.printStackTrace();
-                }
-            });
-            myWriter.write("totalOfChapter="+imgCountList.size());
-            myWriter.close();*/
             FileUtil.writeToFile(baseDir, fileName+"_"+i+".txt", new Gson().toJson(imgCountList));
 
         }catch (Exception e){
+            e.printStackTrace();
             return false;
         }
         return true;
@@ -199,7 +256,7 @@ public class ImageService {
     public Boolean renamingImageFile(RenamingImageFileRequest request){
         try {
             List<String> directoryPaths = request.getDirectoryPath();
-            ImageFileRenamingHandler handler = new ImageFileRenamingHandler();
+            ImageFileRenamingManager handler = new ImageFileRenamingManager();
             directoryPaths.forEach(i -> {
                 handler.renamingFile(i);
             });
@@ -225,7 +282,7 @@ public class ImageService {
             //String c = ImageConstant.IMG_PATTERN_FIRST_CHAPTER;
 
 
-            String path = dir+comicName+".txt";
+            String path = dir+"image_script.txt";
             Integer startIdx = 1;
             String pattern = "%03d";
             if (digit < 3){
@@ -400,6 +457,21 @@ public class ImageService {
                 System.out.println("Failed to create directory!");
             }
         }
+    }
+
+    private int createdDirectoryV2(String baseDownloadFileLocation){
+        System.out.println("Starting create directory, path = "+baseDownloadFileLocation);
+        File file = new File(baseDownloadFileLocation);
+        if (!file.exists()) {
+            if (file.mkdirs()) {
+                System.out.println("Directory is created!");
+            } else {
+                System.out.println("Failed to create directory!");
+            }
+        }else{
+            return file.listFiles().length;
+        }
+        return 0;
     }
 
     private void downloadImage(String baseUrl, String baseDownloadFileLocation, Integer chapter, Integer startFromImg,

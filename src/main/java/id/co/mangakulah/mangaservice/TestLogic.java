@@ -1,5 +1,6 @@
 package id.co.mangakulah.mangaservice;
 
+import com.google.common.base.CharMatcher;
 import com.google.gson.Gson;
 import id.co.mangakulah.mangaservice.dto.ImageInfoDto;
 import id.co.mangakulah.mangaservice.dto.request.ScrapingImageRequest;
@@ -13,6 +14,8 @@ import java.io.IOException;
 import java.util.ArrayList;
 import java.util.Date;
 import java.util.List;
+import java.util.regex.Matcher;
+import java.util.regex.Pattern;
 
 public class TestLogic {
     public static void main(String[] args) throws IOException {
@@ -20,61 +23,23 @@ public class TestLogic {
         String fileName = "sql_script.sql";
         String postTitle = "Villain to Kill Chapter ";
         String postName = "villain-to-kill-chapter-";
-        Integer idTermManga = 38;
-        Integer startFromChapter = 5;
-        Integer imgCount = 7;
-        Integer startId = 644;
+
+        String currentString = "https://komikcast.site/chapter/return-of-the-8th-class-magician-chapter-01.80-bahasa-indonesia/";
+        //String str = currentString.replaceAll("[^\\d.]", "");
+        //String str = currentString.replaceAll("[\\D]", "");
+        //String str = CharMatcher.inRange('0', '9').retainFrom(currentString);
+        //System.out.println(str);
 
 
-        String baseQueryA = "INSERT INTO `wp_posts` (`ID`, `post_author`, `post_date`, `post_date_gmt`, `post_content`, `post_title`, `post_excerpt`, `post_status`, `comment_status`, `ping_status`, `post_password`, `post_name`, `to_ping`, `pinged`, `post_modified`, `post_modified_gmt`, `post_content_filtered`, `post_parent`, `guid`, `menu_order`, `post_type`, `post_mime_type`, `comment_count`, `wp_manga_search_text`) VALUES\n" +
-                "(";
-        Date now = new Date();
-        String finalDate = DateFormatUtil.getStandardFormat(now);
-        String baseQueryB = ", 1, '"+finalDate+"', '"+finalDate+"', '";
+        Pattern decimalNumPattern = Pattern.compile("-?\\d+(\\.\\d+)?");
+        Matcher matcher = decimalNumPattern.matcher(currentString);
 
-        String baseContent="<img src=\\\"";
-        String endContent = "\\\" alt=\\\"\\\" class=\\\"alignnone size-medium\\\" />\\r\\n";
-        String finalContent = "";
-        String endOfScriptA = "', '', 'publish', 'open', 'open', '', '";
-        String endOfScriptB = "', '', '', '"+finalDate+"', '"+finalDate+"', '', 0, 'https://mangakulah.com/?p=";
-        String finalEndScript = "', 0, 'post', '', 0, NULL);";
-
-        for (int c=1; c<=imgCount; c++){
-            String content = imageLocation+ StringUtil.formatNumber3Digit(startFromChapter)+"/"+StringUtil.formatNumber3Digit(c)+".jpg";
-            finalContent = finalContent + baseContent + content + endContent;
+        List<String> decimalNumList = new ArrayList<>();
+        while (matcher.find()) {
+            decimalNumList.add(matcher.group());
         }
-        String wpPostScript = baseQueryA+startId+baseQueryB+ finalContent+"', '"+postTitle+startFromChapter+
-                endOfScriptA+postName+startFromChapter+endOfScriptB+startId+finalEndScript;
-        System.out.println(wpPostScript);
 
-        String termBaseScript = "INSERT INTO `wp_term_relationships` (`object_id`, `term_taxonomy_id`, `term_order`) VALUES\n" +
-                "(";
-        String wpTermScript = termBaseScript+startId+", "+idTermManga+", 0);";
-        System.out.println(wpTermScript);
-
-
-
-        String baseDir = "D:/Images/Mangas/villain-to-kill/";
-       // createdDirectory(baseDir);
-        String path = baseDir+fileName;
-        System.out.println("Final path -> "+path);
-        FileWriter myWriter = new FileWriter(path);
-        try {
-            myWriter.write(wpPostScript+System.lineSeparator()+System.lineSeparator()+wpTermScript+
-                    System.lineSeparator()+System.lineSeparator()+System.lineSeparator());
-        } catch (IOException e) {
-            //e.printStackTrace();
-        }
-//        for (int i = startFromChapter; i<startFromChapter+2; i++){
-//            try {
-//                myWriter.write(j.getChapterName() +"="+j.getImgCount()+System.lineSeparator());
-//            } catch (IOException e) {
-//                //e.printStackTrace();
-//            }
-//        }
-        myWriter.close();
-
-
+        System.out.println(decimalNumList.get(decimalNumList.size()-1).replaceAll("-", ""));
     }
 
     private static void createdDirectory(String baseDownloadFileLocation){
